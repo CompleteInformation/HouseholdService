@@ -1,0 +1,7 @@
+# dotnet
+bin/
+obj/
+
+# Paket
+/packages/
+/paket-files/
