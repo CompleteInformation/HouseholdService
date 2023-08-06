@@ -3,12 +3,8 @@
 {
 	"name": "Ubuntu",
 	// Or use a Dockerfile or Docker Compose file. More info: https://containers.dev/guide/dockerfile
-	"image": "mcr.microsoft.com/devcontainers/base:jammy",
+	"image": "mcr.microsoft.com/devcontainers/dotnet:7.0",
 	"features": {
-		"ghcr.io/devcontainers/features/dotnet:1": {
-			"installUsingApt": false,
-			"version": "7.0.305"
-		},
 		"ghcr.io/devcontainers/features/node:1": {},
 		"ghcr.io/devcontainers/features/docker-in-docker:2": {},
 		"ghcr.io/devcontainers/features/kubectl-helm-minikube:1": {},
@@ -21,23 +17,19 @@
 				"Ionide.Ionide-fsharp"
 			],
 			"settings": {
-				"dotnet.dotnetPath": "/usr/local"
+				"dotnet.dotnetPath": "/usr/bin"
 			}
 		}
-	}
-
+	},
 	// Features to add to the dev container. More info: https://containers.dev/features.
 	// "features": {},
-
 	// Use 'forwardPorts' to make a list of ports inside the container available locally.
 	// "forwardPorts": [],
-
 	// Use 'postCreateCommand' to run commands after the container is created.
 	// "postCreateCommand": "uname -a",
-
+	"postStartCommand": "dotnet run restore"
 	// Configure tool-specific properties.
 	// "customizations": {},
-
 	// Uncomment to connect as root instead. More info: https://aka.ms/dev-containers-non-root.
 	// "remoteUser": "root"
 }

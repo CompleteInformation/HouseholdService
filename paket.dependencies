@@ -2,3 +2,4 @@ source https://www.nuget.org/api/v2
 
 nuget FSharp.Core
 nuget Giraffe ~> 6.0
+nuget Microsoft.NET.Build.Containers
