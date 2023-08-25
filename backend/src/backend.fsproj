@@ -13,6 +13,7 @@
     <Compile Include="Program.fs" />
   </ItemGroup>
   <ItemGroup>
+    <ContainerPort Include="80" Type="tcp" />
     <None Include="web.config" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
   <Import Project="..\.paket\Paket.Restore.targets" />
