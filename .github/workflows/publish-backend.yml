@@ -1,10 +1,9 @@
-#
-name: Publish
+name: Publish Backend
 
 on:
   push:
     tags:
-      - "v*.*.*"
+      - "backend-v*.*.*"
 
 # Defines two custom environment variables for the workflow. These are used for the Container registry domain, and a name for the Docker image that this workflow builds.
 env:
@@ -19,7 +18,7 @@ jobs:
     runs-on: ubuntu-latest
     # Sets the permissions granted to the `GITHUB_TOKEN` for the actions in this job.
     permissions:
-      contents: read
+      contents: write
       packages: write
     steps:
       - name: Prepare variables for run
@@ -28,9 +27,9 @@ jobs:
           if [[ ${GITHUB_REF} == *"-"* ]]; then
             RTAG=Unreleased
           else
-            RTAG=${GITHUB_REF#refs/tags/v}
+            RTAG=${GITHUB_REF#refs/tags/backend-v}
           fi
-          echo ::set-output name=current_version::${GITHUB_REF#refs/tags/v}
+          echo ::set-output name=current_version::${GITHUB_REF#refs/tags/backend-v}
           echo ::set-output name=release_tag::$RTAG
         shell: bash
       - name: Checkout repository

@@ -1,0 +1,35 @@
+name: Build Backend
+
+on:
+  push:
+    branches:
+      - "**"
+    paths:
+      - ".github/workflows/build-backend.yml"
+      - "backend/**"
+      - "!backend/**.md"
+    tags-ignore:
+      - "*"
+  pull_request:
+    paths:
+      - ".github/workflows/build-backend.yml"
+      - "backend/**"
+      - "!backend/**.md"
+
+env:
+  DOTNET_VERSION: 7.0.400
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+      - name: Setup .NET Core
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+      - name: Build
+        run: dotnet run --project ./backend build
