@@ -2,10 +2,12 @@ open RunHelpers
 open RunHelpers.BasicShortcuts
 open RunHelpers.Shortcuts
 open RunHelpers.Templates
+open System.IO
 
 [<RequireQualifiedAccess>]
 module Config =
     let publishPath = "./src"
+    let containerName = "household-backend"
 
 module Task =
     let restore () =
@@ -19,16 +21,19 @@ module Task =
 
     let run () = job { DotNet.run Config.publishPath }
 
-    let publish version =
+    let publish config =
         job {
             let tags =
-                [
-                    "latest"
-                    match version with
-                    | Some version -> version: string
-                    | None -> ()
-                ]
+                match config with
+                | Some (version: string, _, _) when version.Contains("-") -> [version; "prerelease"]
+                | Some (version, _, _) -> [version; "latest"]
+                | None -> [ "dev" ]
                 |> String.concat ";"
+
+            let name =
+                match config with
+                | Some (_, registry, prefix) -> $"{registry}/{prefix}/{Config.containerName}"
+                | None -> $"completeinformation/{Config.containerName}"
 
             dotnet [
                 "publish"
@@ -37,43 +42,56 @@ module Task =
                 "linux"
                 "--arch"
                 "x64"
-                "/t:PublishContainer"
+                "/p:PublishProfile=DefaultContainer"
+                $"/p:ContainerRepository={name}"
                 $"/p:ContainerImageTags=\"{tags}\""
+                match config with
+                | Some (_, registry, _) -> $"/p:ContainerRegistry=\"{registry}\""
+                | None -> ()
                 "-c"
                 "Release"
             ]
         }
 
     let runContainer () =
-        job { cmd "docker" [ "run"; "-p"; "5000:80"; "complete-information-household-backend:latest" ] }
+        job { cmd "docker" [ "run"; "-p"; "5000:80"; $"completeinformation/{Config.containerName}:dev" ] }
 
 [<EntryPoint>]
 let main args =
-    args
-    |> List.ofArray
-    |> function
-        | [ "restore" ] -> Task.restore ()
-        | [ "build" ] ->
-            job {
-                Task.restore ()
-                Task.build ()
-            }
-        | []
-        | [ "run" ] ->
-            job {
-                Task.restore ()
-                Task.run ()
-            }
-        | [ "publish" ] ->
-            job {
-                Task.restore ()
-                Task.publish None
-            }
-        | [ "publish"; version ] ->
-            job {
-                Task.restore ()
-                Task.publish (Some version)
-            }
-        | [ "container" ] -> job { Task.runContainer () }
-        | _ -> Job.error [ "Usage: dotnet run [<command>]"; "Look up available commands in run.fs" ]
-    |> Job.execute
+    let oldCwd = Directory.GetCurrentDirectory()
+    Directory.SetCurrentDirectory(__SOURCE_DIRECTORY__)
+
+    let result =
+        args
+        |> List.ofArray
+        |> function
+            | [ "restore" ] -> Task.restore ()
+            | [ "build" ] ->
+                job {
+                    Task.restore ()
+                    Task.build ()
+                }
+            | []
+            | [ "run" ] ->
+                job {
+                    Task.restore ()
+                    Task.run ()
+                }
+            | [ "publish" ] ->
+                job {
+                    Task.restore ()
+                    Task.publish None
+                }
+            | [ "publish"; version; registry; prefix ] ->
+                job {
+                    Task.restore ()
+                    Task.build ()
+                    Task.publish (Some (version, registry, prefix))
+                }
+            | [ "container" ] -> job { Task.runContainer () }
+            | _ -> Job.error [ "Usage: dotnet run [<command>]"; "Look up available commands in run.fs" ]
+        |> Job.execute
+
+    Directory.SetCurrentDirectory(oldCwd)
+
+    result
