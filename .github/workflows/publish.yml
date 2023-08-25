@@ -46,7 +46,25 @@ jobs:
       # It uses the `tags` and `labels` parameters to tag and label the image with the output from the "meta" step.
       - name: Build
         run: dotnet run publish ${{ steps.tag_name.outputs.current_version }}
+      - name: Get Changelog Entry
+        id: changelog_reader
+        uses: mindsers/changelog-reader-action@v2.0.0
+        with:
+          version: ${{ steps.tag_name.outputs.current_version }}
+          path: ./backend/CHANGELOG.md
       - name: Publish version
         run: docker publish ${{ env.CONTAINER_NAME }}:${{ steps.tag_name.outputs.current_version }}
       - name: Publish latest
+        if: ${{ steps.changelog_reader.outputs.status != 'prereleased' }}
         run: docker publish ${{ env.CONTAINER_NAME }}:latest
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@latest
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # This token is provided by Actions, you do not need to create your own token
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: ${{ github.ref }}
+          body: ${{ steps.changelog_reader.outputs.changes }}
+          prerelease: ${{ steps.changelog_reader.outputs.status == 'prereleased' }}
+          draft: ${{ steps.changelog_reader.outputs.status == 'unreleased' }}
