@@ -1,30 +1,21 @@
-open Fake.IO
 open RunHelpers
 open RunHelpers.Templates
-open System.IO
 
 [<RequireQualifiedAccess>]
 module Config =
-    let publishPath = "./publish"
+    let publishPath = "./src"
 
 module Task =
-    let getProjects () =
-        Directory.EnumerateFiles(".", "*.fsproj", SearchOption.AllDirectories)
-        |> Seq.filter ((=) "./run.fsproj" >> not)
-
     let restore () =
         job {
             DotNet.toolRestore ()
-
-            for project in getProjects () do
-                DotNet.restore project
+            DotNet.restore Config.publishPath
         }
 
     let build () =
-        job {
-            for project in getProjects () do
-                DotNet.build project Debug
-        }
+        job { DotNet.build Config.publishPath Debug }
+
+    let run () = job { DotNet.run Config.publishPath }
 
 [<EntryPoint>]
 let main args =
@@ -32,11 +23,16 @@ let main args =
     |> List.ofArray
     |> function
         | [ "restore" ] -> Task.restore ()
-        | []
         | [ "build" ] ->
             job {
                 Task.restore ()
                 Task.build ()
+            }
+        | []
+        | [ "run" ] ->
+            job {
+                Task.restore ()
+                Task.run ()
             }
         | _ -> Job.error [ "Usage: dotnet run [<command>]"; "Look up available commands in run.fs" ]
     |> Job.execute
